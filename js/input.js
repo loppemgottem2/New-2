@@ -6,6 +6,8 @@
 //  returns the sword to the guard position.
 //  ?desktop=1 adds a mouse/keyboard fallback for development only.
 // =====================================================================
+import { SWORD_GUARD } from './fighter.js';
+
 export class TouchSticks {
   constructor(root, opts = {}) {
     this.root = root;
@@ -58,8 +60,8 @@ export class TouchSticks {
     for (const t of e.changedTouches) {
       const s = this._stickFor(t.clientX);
       if (s.id !== null) continue;
-      s.id = t.identifier; s.ox = t.clientX; s.oy = t.clientY; s.x = 0; s.y = 0;
-      this._show(s);
+      s.id = t.identifier;
+      this._place(s, t.clientX, t.clientY);
     }
   }
   _move(e) {
@@ -69,6 +71,13 @@ export class TouchSticks {
   }
   _end(e) {
     for (const t of e.changedTouches) for (const s of Object.values(this.sticks)) if (s.id === t.identifier) this._release(s);
+  }
+  // a new touch: the walk stick starts centred; the sword stick starts at the guard
+  // position so the blade doesn't jump — drag from there to aim the tip
+  _place(s, cx, cy) {
+    s.ox = cx; s.oy = cy; s.x = 0; s.y = 0;
+    if (s === this.sticks.sword) { s.ox = cx - SWORD_GUARD.x * this.radius; s.oy = cy + SWORD_GUARD.y * this.radius; s.x = SWORD_GUARD.x; s.y = SWORD_GUARD.y; }
+    this._show(s);
   }
   _set(s, cx, cy) {
     let dx = cx - s.ox, dy = cy - s.oy;
@@ -91,7 +100,7 @@ export class TouchSticks {
   _mouse(type, e) {
     if (!this.enabled) { if (type === 'down' && this.onTap) this.onTap(e.clientX, e.clientY); return; }
     const s = this.sticks.sword;
-    if (type === 'down') { this.mouse = true; s.id = 'm'; s.ox = e.clientX; s.oy = e.clientY; this._show(s); }
+    if (type === 'down') { this.mouse = true; s.id = 'm'; this._place(s, e.clientX, e.clientY); }
     else if (type === 'move' && this.mouse) this._set(s, e.clientX, e.clientY);
     else if (type === 'up' && this.mouse) { this.mouse = false; this._release(s); }
   }
@@ -104,6 +113,8 @@ export class TouchSticks {
       mx = (k.has('d') ? 1 : 0) - (k.has('a') ? 1 : 0); my = (k.has('w') ? 1 : 0) - (k.has('s') ? 1 : 0);
       const l = Math.hypot(mx, my); if (l > 1) { mx /= l; my /= l; }
     }
+    // no thumb on the sword stick = upright guard
+    if (s.id === null) return { mx, my, sx: SWORD_GUARD.x, sy: SWORD_GUARD.y };
     return { mx, my, sx: s.x, sy: s.y };
   }
 }

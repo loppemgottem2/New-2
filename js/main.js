@@ -4,7 +4,7 @@
 // =====================================================================
 import { CONFIG } from './config.js';
 import { World } from './physics.js';
-import { Fighter, fighterPairFilter, LIMB_NAMES, SWORD_GEO } from './fighter.js';
+import { Fighter, fighterPairFilter, LIMB_NAMES, SWORD_GEO, SWORD_GUARD } from './fighter.js';
 import { Match } from './match.js';
 import { Bot } from './bot.js';
 import { GameRenderer, THREE } from './render.js';
@@ -78,8 +78,8 @@ class MenuScene {
   }
   setVisible(v) { this.view.group.visible = v; this.ped.visible = v; }
   swing() {
-    // a random direction in front (and sometimes a wind-up over the shoulder)
-    const a = (Math.random() * 2 - 1) * 2.4, r = 0.75 + Math.random() * 0.25;
+    // a random direction anywhere in the half-dome in front
+    const a = Math.random() * Math.PI * 2, r = 0.65 + Math.random() * 0.35;
     this.fighter.input.sx = Math.sin(a) * r; this.fighter.input.sy = Math.cos(a) * r;
     this.swingT = 0.32 + Math.random() * 0.15;
     sound.swish(8);
@@ -89,7 +89,7 @@ class MenuScene {
     this.acc += dt;
     let n = 0;
     while (this.acc >= STEP && n < 3) {
-      if (this.swingT > 0) { this.swingT -= STEP; if (this.swingT <= 0) { this.fighter.input.sx = 0; this.fighter.input.sy = 0; } }
+      if (this.swingT > 0) { this.swingT -= STEP; if (this.swingT <= 0) { this.fighter.input.sx = SWORD_GUARD.x; this.fighter.input.sy = SWORD_GUARD.y; } }
       this.fighter.update(STEP); this.world.step(STEP); this.acc -= STEP; n++;
     }
     if (this.acc > STEP) this.acc = 0;
@@ -257,7 +257,7 @@ class LocalSession extends Session {
     if (kind === 'bot') { this.bot = new Bot(opts.level); this.match.controllers[1] = this.bot; }
     else {
       this.link = opts.link;
-      this.remoteInput = { mx: 0, mz: 0, sx: 0, sy: 0 };
+      this.remoteInput = { mx: 0, mz: 0, sx: SWORD_GUARD.x, sy: SWORD_GUARD.y };
       this.match.controllers[1] = { update: (dt, f) => { Object.assign(f.input, this.remoteInput); } };
       this.link.on('message', (m) => { if (m.t === 'in') { this.remoteInput.mx = clamp(+m.mx || 0, -1, 1); this.remoteInput.mz = clamp(+m.mz || 0, -1, 1); this.remoteInput.sx = clamp(+m.sx || 0, -1, 1); this.remoteInput.sy = clamp(+m.sy || 0, -1, 1); } else if (m.t === 'bye') leaveToMenu('Your opponent left the match.'); });
       this.link.on('close', () => { if (session === this) leaveToMenu('Connection to your opponent was lost.'); });

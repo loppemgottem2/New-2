@@ -39,15 +39,14 @@ export function path(points) {
 }
 if (import.meta.url === `file://${process.argv[1]}`) {
   const log = process.argv[2] === 'log';
-  // horizontal slash right-to-left around the rim of the stick (through 'forward'), repeated
-  const rim = (t0, from, to, dur) => { const pts = []; for (let k = 0; k <= 6; k++) { const a = from + (to - from) * k / 6; pts.push([t0 + dur * k / 6, Math.sin(a) * 0.95, Math.cos(a) * 0.95]); } return pts; };
-  const slash = path([[0, 0, 0], [0.4, 0.92, 0.3], ...rim(0.8, 1.35, -1.35, 0.22), [1.4, -0.92, 0.3], ...rim(1.7, -1.35, 1.35, 0.22), [2.3, 0, 0]]);
+  // horizontal slash: swipe the sword stick across the middle (right -> left, then back)
+  const slash = path([[0, 0, 0.86], [0.4, 0.95, 0.3], [0.8, 0.95, 0.3], [0.98, -0.95, 0.12], [1.4, -0.95, 0.3], [1.7, -0.95, 0.3], [1.88, 0.95, 0.12], [2.3, 0, 0.86]]);
   console.log('slash vs open guard', JSON.stringify(duel({ script: slash, log })));
   // overhead chop: wind up back, chop forward/down
-  const chop = path([[0, 0, 0], [0.5, 0, -1], [0.9, 0, -1], [1.05, 0.1, 1], [1.5, 0.1, 1], [1.8, 0, -1], [2.2, 0, -1], [2.35, -0.1, 1], [3, 0, 0]]);
+  const chop = path([[0, 0, 0.86], [0.5, 0.04, 0.99], [0.9, 0.04, 0.99], [1.08, 0, -0.55], [1.5, 0, -0.55], [1.8, 0.04, 0.99], [2.2, 0.04, 0.99], [2.38, 0, -0.55], [3, 0, 0.86]]);
   console.log('chop', JSON.stringify(duel({ script: chop, log })));
   // stab: pull back then thrust forward
-  const stab = path([[0, 0, 0], [0.5, 0, 0.2], [0.9, 0, 0.2], [1.0, 0, 1], [1.6, 0, 1], [1.9, 0, 0.2], [2.4, 0, 0.2], [2.5, 0.05, 1], [3.5, 0, 1]]);
+  const stab = path([[0, 0, 0.86], [0.5, 0, 0.3], [0.9, 0, 0.3], [1.0, 0, 0.0], [1.6, 0, 0.0], [1.9, 0, 0.3], [2.4, 0, 0.3], [2.5, 0, 0.02], [3.5, 0, 0.02]]);
   console.log('stab', JSON.stringify(duel({ script: stab, log, dist: 1.7 })));
   console.log('slash vs guard', JSON.stringify(duel({ script: slash, victimStick: [0, 0] })));
 }

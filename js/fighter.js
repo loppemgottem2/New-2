@@ -71,6 +71,9 @@ export const SWORD_GEO = {
   bladeR: 0.022,
 };
 
+// sword stick value for the upright guard (what "no thumb on the stick" means)
+export const SWORD_GUARD = { x: 0, y: 0.86 };
+
 // ---------------------------------------------------------------------
 //  Small helpers
 // ---------------------------------------------------------------------
@@ -191,7 +194,7 @@ export class Fighter {
     this.parts = {};
     this.joints = {};
     this.bodies = [];
-    this.input = { mx: 0, mz: 0, sx: 0, sy: 0 }; // world move dir (x,z) & sword stick
+    this.input = { mx: 0, mz: 0, sx: SWORD_GUARD.x, sy: SWORD_GUARD.y }; // world move dir (x,z) & sword stick
     this.opponent = null;
     this.alive = true;
     this.deathTime = 0;
@@ -334,7 +337,7 @@ export class Fighter {
 
   // Place arms + sword in the guard pose instantly (used at spawn)
   _poseArmsAndSword(createGrips) {
-    this._computeSwordTarget(0, 0, true);
+    this._computeSwordTarget(SWORD_GUARD.x, SWORD_GUARD.y, true);
     const sw = this.sword;
     sw.pos.copy(this.swTargetPos).sub(_a.copy(SWORD_GEO.gripCenter).applyQuat(this.swTargetQ));
     sw.q.copy(this.swTargetQ);
@@ -367,7 +370,7 @@ export class Fighter {
     this.com = new V3(); this.comVel = new V3();
     this.swTargetPos = this.swTargetPos || new V3(); this.swTargetQ = this.swTargetQ || new Quat();
     this.tipDir = new V3(0, 1, 0); this.prevTipDir = new V3(0, 1, 0); this.edgeDir = new V3(0, 0, 1);
-    this.stickSmooth = { x: 0, y: 0 };
+    this.stickSmooth = { x: SWORD_GUARD.x, y: SWORD_GUARD.y };
   }
 
   get attachedBodies() { return this.bodies.filter((b) => b === this.sword ? this.swordHeld : !this.detached[b.limb]); }
@@ -392,28 +395,25 @@ export class Fighter {
     if (tf.lenSq() < 1e-4) tf.set(Math.sin(this.facing), 0, Math.cos(this.facing));
     tf.normalize();
     const F = _e.copy(tf), R = _f.set(-F.z, 0, F.x); // right = F x Up
+    // The sword stick is a map of the half-dome in front of the fighter, seen from behind:
+    // stick up = tip up, down = tip down (in front), left/right = out to the sides,
+    // the middle = pointing straight at the opponent. The rim is 90 deg from forward,
+    // so the blade never goes behind the body. Releasing the stick = upright guard.
     const r = Math.min(1, Math.hypot(sx, sy));
-    const phi = Math.atan2(sx, sy); // 0 = forward, +pi/2 = right
-    const back = Math.max(0, -Math.cos(phi));
-    // max tilt from vertical: level when pointing at the enemy, lower out to the sides
-    // (wide sweeps), much less toward the back (wind-up only — never a full 360)
-    const side = Math.abs(Math.sin(phi));
-    const thetaMax = lerp(lerp(1.62, 2.05, side), 0.95, smoothstep((Math.abs(phi) - 1.6) / 1.5));
-    // pointing forward: the first ~60% of the stick levels the blade, the rest thrusts it
-    const fwd = Math.pow(Math.max(0, Math.cos(phi)), 2);
-    const rT = lerp(r, Math.min(1, r / 0.6), fwd);
-    const thrust = fwd * smoothstep((r - 0.58) / 0.4);
-    const theta = rT * thetaMax;
-    const cp = Math.cos(phi), sp = Math.sin(phi);
-    // tip direction (rest: upright, tilted slightly toward the opponent)
-    const d = new V3().copy(UP).scale(Math.cos(theta))
-      .addScaled(F, Math.sin(theta) * cp + 0.24 * (1 - r)).addScaled(R, Math.sin(theta) * sp).normalize();
-    // grip center position (world), relative to the torso center
+    const phi = Math.atan2(sx, sy); // 0 = up, +pi/2 = right
+    const theta = r * 1.55;
+    const st = Math.sin(theta), ct = Math.cos(theta);
+    const d = new V3().copy(F).scale(ct)
+      .addScaled(R, st * Math.sin(phi)).addScaled(UP, st * Math.cos(phi)).normalize();
+    const dU = d.dot(UP), dR = d.dot(R), dF = d.dot(F);
+    // aiming at the opponent makes the arms reach out (thrust / stab)
+    const thrust = smoothstep((dF - 0.72) / 0.26);
+    // grip centre: in front of the belly, following the blade toward where it points
     const base = torso.pos;
     const P = this.swTargetPos.copy(base)
-      .addScaled(UP, -0.13 + 0.16 * back * r + 0.05 * r * (1 - fwd) + 0.06 * thrust)
-      .addScaled(F, 0.32 + 0.1 * Math.max(0, cp) * r * (1 - side) + 0.3 * thrust - 0.06 * back * r)
-      .addScaled(R, 0.15 * sp * r - 0.03 * (1 - thrust));
+      .addScaled(UP, -0.12 + 0.08 * Math.max(0, dU) + 0.08 * Math.max(0, -dU) + 0.07 * thrust)
+      .addScaled(F, 0.31 + 0.27 * thrust + 0.05 * Math.max(0, -dU) + 0.04 * Math.abs(dR))
+      .addScaled(R, 0.14 * dR - 0.02 * (1 - thrust));
     this.thrust = thrust;
     // keep within arm reach of both shoulders
     const sh = _a.copy(base).addScaled(UP, GEO.shoulderY - GEO.torsoY);
@@ -423,7 +423,9 @@ export class Fighter {
     this.prevTipDir.copy(this.tipDir);
     this.tipDir.copy(d);
     if (instant) {
-      this.edgeDir.copy(F).addScaled(d, -F.dot(d)).normalize();
+      this.edgeDir.copy(F).addScaled(d, -F.dot(d));
+      if (this.edgeDir.lenSq() < 0.09) this.edgeDir.set(0, -1, 0).addScaled(d, d.y);
+      this.edgeDir.normalize();
     } else {
       const mv = _c.subVectors(this.tipDir, this.prevTipDir);
       mv.addScaled(d, -mv.dot(d));
@@ -432,11 +434,12 @@ export class Fighter {
         mv.normalize();
         this.edgeDir.lerp(mv, Math.min(1, dt * 18 * Math.min(1, speed / 3)));
       }
-      // default edge: toward the front
+      // default edge: toward the front (or downward when the tip already points forward)
       _c.copy(F).addScaled(d, -F.dot(d));
+      if (_c.lenSq() < 0.09) _c.set(0, -1, 0).addScaled(d, d.y);
       if (_c.lenSq() > 1e-4) { _c.normalize(); this.edgeDir.lerp(_c, Math.min(1, dt * 1.5)); }
       this.edgeDir.addScaled(d, -this.edgeDir.dot(d));
-      if (this.edgeDir.lenSq() < 1e-6) this.edgeDir.copy(F).addScaled(d, -F.dot(d));
+      if (this.edgeDir.lenSq() < 1e-6) this.edgeDir.copy(UP).addScaled(d, -d.y);
       this.edgeDir.normalize();
     }
     const X = _c.crossVectors(d, this.edgeDir).normalize();
@@ -903,8 +906,8 @@ export class Fighter {
       const works = this._armWorks(side) && this.swordHeld;
       const ik = this._armIK(side, false);
       if (works) {
-        sh.driveTarget.copy(ik.q1); setDrive(sh, DRIVE_CHILD_WORLD, 110, 20, 120);
-        el.driveTarget.copy(ik.q1).conjugate().multiply(ik.q2); setDrive(el, DRIVE_REL, 60, 15, 70);
+        sh.driveTarget.copy(ik.q1); setDrive(sh, DRIVE_CHILD_WORLD, 170, 24, 150);
+        el.driveTarget.copy(ik.q1).conjugate().multiply(ik.q2); setDrive(el, DRIVE_REL, 95, 18, 90);
         wr.driveTarget.copy(this.swTargetQ); setDrive(wr, DRIVE_CHILD_WORLD, 4, 4, 6);
       } else {
         // free (no sword or disabled): hang loosely / guard pose if healthy
@@ -991,7 +994,7 @@ export class Fighter {
     for (const n of LIMB_NAMES) { this.limbHp[n] = CONFIG.FIGHTER.LIMB_HP; this.disabled[n] = false; this.detached[n] = false; }
     this.swordHeld = true; this.gripActive = { R: true, L: true };
     this.fallen = false; this.fallenTime = 0; this.gettingUp = 0;
-    this.input.mx = this.input.mz = this.input.sx = this.input.sy = 0;
+    this.input.mx = this.input.mz = 0; this.input.sx = SWORD_GUARD.x; this.input.sy = SWORD_GUARD.y;
     this._initControl();
     this._build();
     this.facing = yaw;
