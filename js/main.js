@@ -41,7 +41,7 @@ const sticks = new TouchSticks($('touch'), { radius: settings.stick });
 window.addEventListener('resize', () => { renderer.resize(); checkOrientation(); });
 
 // ------------------------------------------------------------- screens
-const SCREENS = ['menu', 'private', 'searching', 'settings', 'howto', 'results', 'left', 'gate'];
+const SCREENS = ['splash', 'menu', 'private', 'searching', 'settings', 'howto', 'results', 'left', 'gate'];
 let current = 'menu';
 function show(name) {
   for (const s of SCREENS) { const el = $(s); if (el) el.hidden = s !== name; }
@@ -506,12 +506,35 @@ function goFullscreen() {
 }
 // any tap (touchend counts as a user gesture) brings fullscreen back during a match,
 // and the first tap on the menu enters it too
-let menuFsTried = false;
+// (browsers only allow fullscreen from a tap, so the very first screen is "tap to play")
 window.addEventListener('touchend', () => {
   if (!MOBILE_OK || current === 'left' || current === 'gate') return;
-  if (session || !menuFsTried) { menuFsTried = true; goFullscreen(); }
+  goFullscreen();
 }, { capture: true, passive: true });
-window.addEventListener('click', () => { if (session) goFullscreen(); }, { capture: true });
+window.addEventListener('click', () => { if (current !== 'left' && current !== 'gate') goFullscreen(); }, { capture: true });
+const NEEDS_SPLASH = MOBILE_OK && !DEV_DESKTOP && FS_SUPPORTED && !IS_STANDALONE;
+function leaveSplash() {
+  if (current !== 'splash') return;
+  goFullscreen();
+  sound.unlock();
+  show('menu');
+}
+$('splash').addEventListener('touchend', (e) => { e.preventDefault(); leaveSplash(); });
+$('splash').addEventListener('click', leaveSplash);
+
+// Android: offer to install the game as an app (it then always opens full screen)
+let installEvt = null;
+window.addEventListener('beforeinstallprompt', (e) => { e.preventDefault(); installEvt = e; $('btn-install').hidden = IS_STANDALONE; });
+window.addEventListener('appinstalled', () => { installEvt = null; $('btn-install').hidden = true; });
+$('btn-install').addEventListener('click', async () => {
+  if (!installEvt) return;
+  const ev = installEvt; installEvt = null;
+  try { ev.prompt(); await ev.userChoice; } catch { /* dismissed */ }
+  $('btn-install').hidden = true;
+});
+if ('serviceWorker' in navigator && location.protocol === 'https:' && !window.RD_PREVIEW) {
+  navigator.serviceWorker.register('sw.js').catch(() => { /* not essential */ });
+}
 // tip for phones where the page itself can't go fullscreen
 function setupFullscreenTip() {
   const tip = $('fs-tip');
@@ -551,7 +574,7 @@ function frame(now) {
 applySettings();
 syncSettingsUI();
 checkOrientation();
-show('menu');
+show(NEEDS_SPLASH && !isFullscreen() ? 'splash' : 'menu');
 setupFullscreenTip();
 if (!MOBILE_OK) { show('gate'); $('gate-url').textContent = location.href.split('#')[0]; }
 document.body.classList.add('ready');

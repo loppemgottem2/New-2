@@ -49,6 +49,17 @@
     <div id="fps" hidden></div>
   </div>
 
+  <!-- ============ TAP TO PLAY (first tap = full screen) ============ -->
+  <div id="splash" class="screen" hidden>
+    <div class="splash-inner">
+      <div class="brand-top">RAGDOLL</div>
+      <div class="brand-bottom">DUELISTS</div>
+      <div class="brand-cut"></div>
+      <div class="splash-tap">Tap to play</div>
+      <div class="splash-sub">The game will go full screen</div>
+    </div>
+  </div>
+
   <!-- ============ MAIN MENU ============ -->
   <div id="menu" class="screen">
     <div class="brand">
@@ -57,6 +68,7 @@
       <div class="brand-cut"></div>
     </div>
     <div class="tap-hint">Tap the sky to make your duelist swing</div>
+    <button id="btn-install" class="install-chip" hidden>Install the app <small>opens full screen</small></button>
     <div id="fs-tip" class="fs-tip" hidden><span id="fs-tip-text"></span><button id="fs-tip-close" aria-label="Hide tip">✕</button></div>
     <div class="menu-panel">
       <button id="btn-quick" class="btn primary"><span>Quick Match</span><small>Random opponent online</small></button>
