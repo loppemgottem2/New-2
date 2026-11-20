@@ -426,7 +426,9 @@ $('btn-search-cancel').addEventListener('click', () => { sound.click(); if (sear
 $('btn-rematch').addEventListener('click', () => { sound.click(); if (session && session.rematch) session.rematch(); });
 $('btn-results-menu').addEventListener('click', () => { sound.click(); leaveToMenu(''); });
 
+const PREVIEW = !!window.RD_PREVIEW; // single-page preview build: no peer-to-peer allowed
 function requireNet() {
+  if (PREVIEW) { notice('Online matches work in the full version of the game (hosted on GitHub Pages). This preview can fight bots.'); return false; }
   if (Net.netAvailable()) return true;
   notice('Online play could not load (are you offline?). You can still fight bots.');
   return false;
