@@ -522,18 +522,11 @@ function leaveSplash() {
 $('splash').addEventListener('touchend', (e) => { e.preventDefault(); leaveSplash(); });
 $('splash').addEventListener('click', leaveSplash);
 
-// Android: offer to install the game as an app (it then always opens full screen)
-let installEvt = null;
-window.addEventListener('beforeinstallprompt', (e) => { e.preventDefault(); installEvt = e; $('btn-install').hidden = IS_STANDALONE; });
-window.addEventListener('appinstalled', () => { installEvt = null; $('btn-install').hidden = true; });
-$('btn-install').addEventListener('click', async () => {
-  if (!installEvt) return;
-  const ev = installEvt; installEvt = null;
-  try { ev.prompt(); await ev.userChoice; } catch { /* dismissed */ }
-  $('btn-install').hidden = true;
-});
-if ('serviceWorker' in navigator && location.protocol === 'https:' && !window.RD_PREVIEW) {
-  navigator.serviceWorker.register('sw.js').catch(() => { /* not essential */ });
+// no "install this app" pop-ups from the browser
+window.addEventListener('beforeinstallprompt', (e) => e.preventDefault());
+// an earlier version registered a service worker; remove it
+if ('serviceWorker' in navigator) {
+  try { navigator.serviceWorker.getRegistrations().then((rs) => rs.forEach((r) => r.unregister())).catch(() => {}); } catch { /* */ }
 }
 // tip for phones where the page itself can't go fullscreen
 function setupFullscreenTip() {

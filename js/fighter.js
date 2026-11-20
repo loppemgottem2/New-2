@@ -42,10 +42,10 @@ export const LIMB_INFO = {
   uArmL:  { kind: 'arm',   mass: 2.2, r: 0.055, hpMul: 0.45, bleed: 0.8, parent: 'torso', joint: 'shoulderL' },
   fArmL:  { kind: 'arm',   mass: 1.5, r: 0.05,  hpMul: 0.4,  bleed: 0.7, parent: 'uArmL', joint: 'elbowL' },
   handL:  { kind: 'hand',  mass: 0.5, r: 0.055, hpMul: 0.3,  bleed: 0.5, parent: 'fArmL', joint: 'wristL' },
-  thighR: { kind: 'leg',   mass: 8,   r: 0.075, hpMul: 0.55, bleed: 1.0, parent: 'torso', joint: 'hipR' },
+  thighR: { kind: 'leg',   mass: 8,   r: 0.064, hpMul: 0.55, bleed: 1.0, parent: 'torso', joint: 'hipR' },
   shinR:  { kind: 'leg',   mass: 3.8, r: 0.06,  hpMul: 0.45, bleed: 0.8, parent: 'thighR', joint: 'kneeR' },
   footR:  { kind: 'foot',  mass: 1.2, r: 0.05,  hpMul: 0.3,  bleed: 0.5, parent: 'shinR', joint: 'ankleR' },
-  thighL: { kind: 'leg',   mass: 8,   r: 0.075, hpMul: 0.55, bleed: 1.0, parent: 'torso', joint: 'hipL' },
+  thighL: { kind: 'leg',   mass: 8,   r: 0.064, hpMul: 0.55, bleed: 1.0, parent: 'torso', joint: 'hipL' },
   shinL:  { kind: 'leg',   mass: 3.8, r: 0.06,  hpMul: 0.45, bleed: 0.8, parent: 'thighL', joint: 'kneeL' },
   footL:  { kind: 'foot',  mass: 1.2, r: 0.05,  hpMul: 0.3,  bleed: 0.5, parent: 'shinL', joint: 'ankleL' },
 };
@@ -56,10 +56,10 @@ for (const n of LIMB_NAMES) if (LIMB_INFO[n].parent) CHILDREN[LIMB_INFO[n].paren
 
 // geometry (character local: forward +Z, up +Y, right = -X)
 export const GEO = {
-  torsoY: 1.20, torsoHalf: 0.15, torsoR: 0.15,
-  headY: 1.655, headR: 0.12, neckY: 1.535,
-  shoulderX: 0.21, shoulderY: 1.42, uArmLen: 0.28, fArmLen: 0.26, handR: 0.055, handOff: 0.05,
-  hipX: 0.10, hipY: 0.96, thighLen: 0.43, shinLen: 0.43,
+  torsoY: 1.215, torsoHalf: 0.16, torsoR: 0.15,
+  headY: 1.685, headR: 0.12, neckY: 1.562,
+  shoulderX: 0.185, shoulderY: 1.455, uArmLen: 0.28, fArmLen: 0.26, handR: 0.055, handOff: 0.05,
+  hipX: 0.09, hipY: 0.96, thighLen: 0.43, shinLen: 0.43, thighR: 0.064,
   foot: { w: 0.10, h: 0.08, l: 0.25, fwd: 0.05 }, ankleY: 0.10,
 };
 
@@ -245,8 +245,8 @@ export class Fighter {
       const hand = this._part('hand' + side, 0.5, sphereInertia(0.5, G.handR), this._local(sx * G.shoulderX, G.shoulderY - G.uArmLen - G.fArmLen - G.handOff, 0, p));
       hand.addCapsule(0, 0, 0, 0, 0, 0, G.handR).addGroundPoint(0, 0, 0, G.handR);
       const th = G.thighLen / 2, sh = G.shinLen / 2;
-      const thigh = this._part('thigh' + side, 8, capsuleInertia(8, 0.075, th), this._local(sx * G.hipX, G.hipY - th, 0, p));
-      thigh.addCapsule(0, -th, 0, 0, th, 0, 0.075).addGroundPoint(0, -th, 0, 0.075).addGroundPoint(0, th, 0, 0.075);
+      const thigh = this._part('thigh' + side, 8, capsuleInertia(8, G.thighR, th), this._local(sx * G.hipX, G.hipY - th, 0, p));
+      thigh.addCapsule(0, -th, 0, 0, th, 0, G.thighR).addGroundPoint(0, -th, 0, G.thighR).addGroundPoint(0, th, 0, G.thighR);
       const shin = this._part('shin' + side, 3.8, capsuleInertia(3.8, 0.06, sh), this._local(sx * G.hipX, G.hipY - G.thighLen - sh, 0, p));
       shin.addCapsule(0, -sh, 0, 0, sh, 0, 0.06).addGroundPoint(0, -sh, 0, 0.06).addGroundPoint(0, sh, 0, 0.06);
       const F = G.foot;
@@ -688,7 +688,7 @@ export class Fighter {
     // desired torso orientation: upright, facing, leaning into acceleration
     const vd = this.desiredVel || new V3();
     const velErr = new V3().subVectors(vd, this.comVel); velErr.y = 0;
-    const leanF = clamp(velErr.dot(F) * 0.08, -0.1, 0.16), leanR = clamp(velErr.dot(R) * 0.05, -0.08, 0.08);
+    const leanF = clamp(velErr.dot(F) * 0.05, -0.06, 0.08), leanR = clamp(velErr.dot(R) * 0.03, -0.05, 0.05);
     const torsoTarget = new Quat().setFromYaw(this.facing);
     torsoTarget.premultiply(_q.setFromAxisAngle(R.x, R.y, R.z, -leanF)); // pitch forward about the right axis
     torsoTarget.premultiply(_q.setFromAxisAngle(F.x, F.y, F.z, leanR));

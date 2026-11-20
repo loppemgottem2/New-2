@@ -31,6 +31,29 @@ function roundedBox(w, h, l, r, seg = 3) {
   return g;
 }
 
+// Torso: chest wider than the waist, a little hip flare, flattened front-to-back.
+// Spans the same height as the collision capsule (centre at the body origin).
+const TORSO_DEPTH = 0.8;
+const TORSO_PROFILE = [ // [radius, y] from the bottom of the pelvis to the top of the shoulders
+  [0.0, -0.31], [0.07, -0.302], [0.112, -0.282], [0.138, -0.248], [0.148, -0.2], [0.144, -0.14],
+  [0.133, -0.08], [0.134, -0.02], [0.149, 0.05], [0.168, 0.12], [0.18, 0.18], [0.178, 0.225],
+  [0.16, 0.262], [0.122, 0.288], [0.07, 0.303], [0.0, 0.31],
+];
+export function torsoRadiusAt(y) {
+  const P = TORSO_PROFILE;
+  if (y <= P[0][1]) return P[0][0];
+  for (let i = 1; i < P.length; i++) if (y <= P[i][1]) { const k = (y - P[i - 1][1]) / (P[i][1] - P[i - 1][1]); return P[i - 1][0] + (P[i][0] - P[i - 1][0]) * k; }
+  return 0;
+}
+function torsoGeometry() {
+  const pts = new THREE.SplineCurve(TORSO_PROFILE.map(([r, y]) => new THREE.Vector2(r, y))).getPoints(48)
+    .map((v) => new THREE.Vector2(Math.max(0, v.x), v.y));
+  const g = new THREE.LatheGeometry(pts, 40);
+  g.scale(1, 1, TORSO_DEPTH);
+  g.computeVertexNormals();
+  return g;
+}
+
 // diamond-section tapered blade along +Y (sword local frame: Z = edge, X = flat)
 function bladeGeometry() {
   const S = SWORD_GEO;
@@ -95,16 +118,17 @@ class FighterView {
     this.mats = {};
     this.style = style;
     const caps = {
-      torso: [GEO.torsoR, GEO.torsoHalf * 2], head: [GEO.headR, 0],
+      torso: null, head: [GEO.headR, 0],
       uArmR: [0.055, GEO.uArmLen], fArmR: [0.05, GEO.fArmLen], handR: [GEO.handR, 0],
       uArmL: [0.055, GEO.uArmLen], fArmL: [0.05, GEO.fArmLen], handL: [GEO.handR, 0],
-      thighR: [0.075, GEO.thighLen], shinR: [0.06, GEO.shinLen],
-      thighL: [0.075, GEO.thighLen], shinL: [0.06, GEO.shinLen],
+      thighR: [GEO.thighR, GEO.thighLen], shinR: [0.06, GEO.shinLen],
+      thighL: [GEO.thighR, GEO.thighLen], shinL: [0.06, GEO.shinLen],
     };
     for (const n of LIMB_NAMES) {
       const mat = new THREE.MeshStandardMaterial({ color: BODY_COLOR.clone(), roughness: 0.58, metalness: 0.0 });
       let geo;
-      if (n.startsWith('foot')) geo = renderer.geo.foot;
+      if (n === 'torso') geo = renderer.geo.torso;
+      else if (n.startsWith('foot')) geo = renderer.geo.foot;
       else if (caps[n][1] === 0) geo = renderer.sphereGeo(caps[n][0]);
       else geo = renderer.capsuleGeo(caps[n][0], caps[n][1]);
       const m = new THREE.Mesh(geo, mat);
@@ -190,6 +214,7 @@ class FighterView {
         _v.normalize();
         const rr = limb.startsWith('foot') ? 0.05 : info.r;
         s.position.set(_v.x * rr * 0.96, lp.y, _v.z * rr * 0.96);
+        if (limb === 'torso') { const tr = torsoRadiusAt(lp.y) * 0.97; s.position.set(_v.x * tr, lp.y, _v.z * tr * TORSO_DEPTH); }
         if (info.kind === 'head' || limb.startsWith('hand')) s.position.copy(_v).multiplyScalar(rr * 0.96);
         s.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), _v);
         s.rotateY(Math.random() * Math.PI);
@@ -350,6 +375,7 @@ export class GameRenderer {
     const S = SWORD_GEO;
     this.geo = {
       foot: roundedBox(GEO.foot.w, GEO.foot.h, GEO.foot.l, 0.03, 3),
+      torso: torsoGeometry(),
       blade: bladeGeometry(),
       guard: roundedBox(0.032, 0.026, S.guardHalf * 2 + 0.02, 0.008, 2),
       grip: new THREE.CylinderGeometry(0.0165, 0.018, S.gripTop - S.gripBottom, 14),

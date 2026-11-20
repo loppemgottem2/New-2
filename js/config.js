@@ -25,7 +25,7 @@ export const CONFIG = {
     LIMB_HP: 100,
     WALK_SPEED: 1.35,       // m/s desired speed at full stick
     STEP_TIME: 0.30,       // seconds per step while walking
-    STAND_HEIGHT: 0.91,    // hip joint height while standing (knees slightly bent)
+    STAND_HEIGHT: 0.90,    // hip joint height while standing (knees slightly bent)
     TURN_RATE: 5.0,        // rad/s facing turn speed
     UPRIGHT_ASSIST: 140,   // N m of "core strength" assist on the torso (fades when badly tilted)
     FALL_TILT: 1.05,       // radians of torso tilt that count as fallen over
