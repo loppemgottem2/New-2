@@ -21,7 +21,7 @@ A 3D physics sword-fighting game for **phones**. Two wobbly stickmen duel with s
 4. After about a minute the game is live at `https://<your-username>.github.io/<repo-name>/`.
    Open it on your phone and turn it sideways.
 
-**Full screen:** browsers only allow full screen after a tap, so the game opens on a **Tap to play** screen: that first tap puts the whole game (menu included) in full screen, and any later tap brings it back if you swipe out. On Android you can also tap **Install the app** on the menu; the installed app always opens full screen with no tap needed. iPhones don't let web pages go full screen at all, so on an iPhone tap **Share → Add to Home Screen** and start the game from that icon — it then opens without any browser bars.
+**Full screen:** browsers only allow full screen after a tap, so the game opens on a **Tap to play** screen: that first tap puts the whole game (menu included) in full screen, and any later tap brings it back if you swipe out. iPhones don't let web pages go full screen at all, so on an iPhone tap **Share → Add to Home Screen** and start the game from that icon — it then opens without any browser bars.
 
 Any static host works too (Netlify, Cloudflare Pages, itch.io as an HTML game…).
 
@@ -42,7 +42,7 @@ then open `http://localhost:8000/?desktop=1` (the `?desktop=1` switch allows mou
 | **Right half of the screen** | Sword joystick. Where you hold it is where the tip points: up = toward the enemy, sides = out to the sides, down = wind-up over the shoulder. Sweep quickly around the edge to slash. Push up past the middle to *thrust* (stab). Let go to return to guard. |
 | **⚙** | Settings during a match (pauses bot fights). |
 | **✕** | In a match: tap once, then tap again to leave to the main menu. On the main menu: leaves the game. |
-| **Main menu** | Tap the sky and your duelist on the pedestal swings in a random direction. |
+| **Main menu** | Tap anywhere outside the buttons and your duelist on the pedestal swings in a random direction. |
 
 ---
 

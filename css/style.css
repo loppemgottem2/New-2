@@ -108,7 +108,6 @@ button:focus-visible, input:focus-visible { outline: 3px solid #fff; outline-off
 .brand-top { font: 600 clamp(24px, 6.5vh, 48px)/0.8 var(--font-display); letter-spacing: 0.32em; }
 .brand-bottom { font: 700 clamp(44px, 13vh, 100px)/0.8 var(--font-display); letter-spacing: 0.03em; }
 .brand-cut { width: 62%; height: 5px; margin-top: 6px; background: linear-gradient(90deg, var(--blood), rgba(184,20,28,0)); transform: skewX(-30deg); border-radius: 2px; }
-.tap-hint { position: absolute; left: max(22px, calc(var(--safe-l) + 14px)); bottom: calc(14px + var(--safe-b)); color: #fff; font-size: 14px; opacity: 0.9; text-shadow: 0 1px 3px rgba(10,30,60,0.5); pointer-events: none; }
 .menu-panel { width: min(320px, 44vw); display: flex; flex-direction: column; gap: 8px; margin-right: 52px; max-height: 100%; overflow: auto; padding: 4px 2px 8px; touch-action: pan-y; }
 .name-field { display: flex; align-items: center; gap: 10px; background: rgba(247,243,234,0.9); border-radius: 12px; padding: 6px 12px; }
 .name-field span { font: 600 18px/1 var(--font-display); letter-spacing: 0.08em; color: var(--ink-soft); text-transform: uppercase; }
@@ -187,7 +186,7 @@ input[type=range]::-moz-range-thumb { width: 22px; height: 22px; border-radius: 
 .row.compact { gap: 8px; }
 .card-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
 .card-head .btn { width: auto; padding: 8px 22px; }
-.fs-tip { position: absolute; left: max(22px, calc(var(--safe-l) + 14px)); bottom: calc(40px + var(--safe-b)); max-width: min(46vw, 360px); display: flex; align-items: flex-start; gap: 10px; background: rgba(19, 34, 56, 0.86); color: #fff; border-radius: 12px; padding: 9px 10px 9px 13px; font-size: 13px; line-height: 1.35; z-index: 5; }
+.fs-tip { position: absolute; left: max(22px, calc(var(--safe-l) + 14px)); bottom: calc(14px + var(--safe-b)); max-width: min(46vw, 360px); display: flex; align-items: flex-start; gap: 10px; background: rgba(19, 34, 56, 0.86); color: #fff; border-radius: 12px; padding: 9px 10px 9px 13px; font-size: 13px; line-height: 1.35; z-index: 5; }
 .fs-tip button { flex: none; border: 0; background: rgba(255,255,255,0.15); color: #fff; width: 26px; height: 26px; border-radius: 8px; font-size: 13px; }
 
 /* ---------------- tap to play ---------------- */
@@ -199,6 +198,4 @@ input[type=range]::-moz-range-thumb { width: 22px; height: 22px; border-radius: 
 .splash-tap { margin-top: 7vh; font: 600 clamp(28px, 8vh, 44px)/1 var(--font-display); letter-spacing: 0.14em; text-transform: uppercase; animation: tapPulse 1.4s ease-in-out infinite; }
 .splash-sub { margin-top: 10px; font: 400 14px/1.3 var(--font-ui); opacity: 0.85; text-shadow: 0 1px 3px rgba(10,30,60,0.5); }
 @keyframes tapPulse { 50% { opacity: 0.45; transform: scale(0.96); } }
-.install-chip { position: absolute; left: max(22px, calc(var(--safe-l) + 14px)); bottom: calc(40px + var(--safe-b)); border: 0; border-radius: 12px; padding: 9px 14px; background: var(--bone); color: var(--ink); font: 600 20px/1 var(--font-display); letter-spacing: 0.05em; text-transform: uppercase; box-shadow: 0 3px 0 #c8b791; display: flex; flex-direction: column; align-items: flex-start; gap: 3px; z-index: 5; }
-.install-chip small { font: 400 12px/1 var(--font-ui); text-transform: none; letter-spacing: 0; color: var(--ink-soft); }
 @media (prefers-reduced-motion: reduce) { .splash-tap { animation: none; } }
