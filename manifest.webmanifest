@@ -1,0 +1,10 @@
+{
+  "name": "Ragdoll Duelists",
+  "short_name": "Duelists",
+  "start_url": "./index.html",
+  "display": "fullscreen",
+  "orientation": "landscape",
+  "background_color": "#2f7fe0",
+  "theme_color": "#2f7fe0",
+  "icons": [{ "src": "icon.svg", "sizes": "any", "type": "image/svg+xml" }]
+}

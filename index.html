@@ -1,0 +1,181 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="theme-color" content="#2f7fe0">
+  <meta name="description" content="Ragdoll Duelists — physics sword duels between wobbly stickmen high above the clouds. For phones.">
+  <title>Ragdoll Duelists</title>
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="icon" href="icon.svg" type="image/svg+xml">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Teko:wght@500;600;700&family=Rubik:wght@400;500;700&display=swap">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <canvas id="c"></canvas>
+  <div id="touch"></div>
+  <div id="vignette"></div>
+
+  <!-- ============ HUD ============ -->
+  <div id="hud" hidden>
+    <div class="hud-top">
+      <div class="hp-bar left" id="p1">
+        <div class="hp-head"><span class="hp-name">You</span><span class="hp-drop"></span><span class="hp-num">100</span></div>
+        <div class="hp-track"><div class="hp-ghost"></div><div class="hp-fill"></div><div class="hp-bleed"></div></div>
+      </div>
+      <div class="hud-score"><div id="score">0 – 0</div><div id="round-label">Round 1 · first to 3</div></div>
+      <div class="hp-bar right" id="p2">
+        <div class="hp-head"><span class="hp-num">100</span><span class="hp-drop"></span><span class="hp-name">Bot</span></div>
+        <div class="hp-track"><div class="hp-ghost"></div><div class="hp-fill"></div><div class="hp-bleed"></div></div>
+      </div>
+      <div class="hud-buttons">
+        <button id="btn-gear" class="icon-btn" aria-label="Settings">
+          <svg viewBox="0 0 24 24" width="24" height="24" aria-hidden="true"><path fill="currentColor" d="M19.4 13a7.5 7.5 0 0 0 0-2l2-1.6-2-3.4-2.4 1a7.4 7.4 0 0 0-1.7-1l-.4-2.6h-4l-.4 2.6a7.4 7.4 0 0 0-1.7 1l-2.4-1-2 3.4 2 1.6a7.5 7.5 0 0 0 0 2l-2 1.6 2 3.4 2.4-1a7.4 7.4 0 0 0 1.7 1l.4 2.6h4l.4-2.6a7.4 7.4 0 0 0 1.7-1l2.4 1 2-3.4zM12 15.5A3.5 3.5 0 1 1 12 8.5a3.5 3.5 0 0 1 0 7z"/></svg>
+        </button>
+        <button id="btn-x" class="icon-btn x" aria-label="Leave match">
+          <svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" d="M6 6l12 12M18 6L6 18"/></svg>
+        </button>
+      </div>
+    </div>
+    <div id="leave-hint" hidden>Tap ✕ again to leave the match</div>
+    <div id="banner"></div>
+    <div id="sub-banner"></div>
+    <div id="fps" hidden></div>
+  </div>
+
+  <!-- ============ MAIN MENU ============ -->
+  <div id="menu" class="screen">
+    <div class="brand">
+      <div class="brand-top">RAGDOLL</div>
+      <div class="brand-bottom">DUELISTS</div>
+      <div class="brand-cut"></div>
+    </div>
+    <div class="tap-hint">Tap the sky to make your duelist swing</div>
+    <div class="menu-panel">
+      <button id="btn-quick" class="btn primary"><span>Quick Match</span><small>Random opponent online</small></button>
+      <button id="btn-private" class="btn"><span>Private Match</span><small>Play a friend with a code</small></button>
+      <div class="bot-card">
+        <button id="btn-bot" class="btn"><span>Fight a Bot</span><small>Level <output id="bot-level-out">5</output> · <em id="bot-level-desc">Swordsman</em></small></button>
+        <input type="range" id="bot-level" min="1" max="10" step="1" value="5" aria-label="Bot level 1 to 10">
+        <div class="ticks"><span>1</span><span>10</span></div>
+      </div>
+      <div class="row compact">
+        <button id="btn-settings" class="btn small">Settings</button>
+        <button id="btn-howto" class="btn small">How to play</button>
+      </div>
+      <div id="menu-notice" class="notice" hidden></div>
+    </div>
+  </div>
+  <button id="menu-x" class="icon-btn x menu-x" aria-label="Leave the game">
+    <svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" d="M6 6l12 12M18 6L6 18"/></svg>
+  </button>
+
+  <!-- ============ PRIVATE ============ -->
+  <div id="private" class="screen dim" hidden>
+    <div class="card">
+      <h2>Private Match</h2>
+      <p class="muted">Make a code and send it to a friend, or type the code they sent you.</p>
+      <button id="btn-create" class="btn primary"><span>Create a code</span><small>You host the duel</small></button>
+      <div class="join-row">
+        <input id="code-input" maxlength="5" placeholder="CODE" autocomplete="off" autocapitalize="characters" spellcheck="false" aria-label="Match code">
+        <button id="btn-join" class="btn">Join</button>
+      </div>
+      <div id="private-status" class="status"></div>
+      <button id="btn-private-back" class="btn small ghost">Back</button>
+    </div>
+  </div>
+
+  <!-- ============ SEARCHING ============ -->
+  <div id="searching" class="screen dim" hidden>
+    <div class="card">
+      <h2 id="search-title">Quick Match</h2>
+      <div id="search-code" class="code-box" hidden><span>Your code</span><strong id="search-code-value">-----</strong></div>
+      <div class="spinner" aria-hidden="true"></div>
+      <p id="search-status" class="muted">Looking for an opponent…</p>
+      <button id="btn-search-cancel" class="btn small ghost">Cancel</button>
+    </div>
+  </div>
+
+  <!-- ============ SETTINGS ============ -->
+  <div id="settings" class="screen dim" hidden>
+    <div class="card wide">
+      <div class="card-head"><h2>Settings</h2><button id="btn-settings-done" class="btn primary small">Done</button></div>
+      <p id="settings-paused" class="muted" hidden>The bot fight is paused.</p>
+      <div class="settings-grid">
+        <div class="set-row"><span>Graphics</span>
+          <div class="seg" id="set-quality"><button data-v="low">Low</button><button data-v="medium">Medium</button><button data-v="high">High</button></div></div>
+        <div class="set-row"><span>Blood</span>
+          <div class="seg" id="set-blood"><button data-v="off">Off</button><button data-v="low">Low</button><button data-v="normal">Normal</button><button data-v="lots">Lots</button></div></div>
+        <label class="set-row name-row" for="name"><span>Your name</span><input id="name" maxlength="14" placeholder="Duelist" autocomplete="off" spellcheck="false"></label>
+        <label class="set-row" for="set-shadows"><span>Shadows</span><input type="checkbox" id="set-shadows" class="switch"></label>
+        <label class="set-row" for="set-shake"><span>Camera shake</span><input type="checkbox" id="set-shake" class="switch"></label>
+        <label class="set-row" for="set-vibrate"><span>Vibration</span><input type="checkbox" id="set-vibrate" class="switch"></label>
+        <label class="set-row" for="set-fps"><span>Show FPS</span><input type="checkbox" id="set-fps" class="switch"></label>
+        <label class="set-row" for="set-volume"><span>Volume <output id="set-volume-out">80</output></span><input type="range" id="set-volume" min="0" max="100"></label>
+        <label class="set-row" for="set-stick"><span>Joystick size <output id="set-stick-out">62</output></span><input type="range" id="set-stick" min="44" max="96"></label>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ HOW TO ============ -->
+  <div id="howto" class="screen dim" hidden>
+    <div class="card wide">
+      <h2>How to duel</h2>
+      <div class="howto-grid">
+        <div><h3>Left thumb · walk</h3><p>Push anywhere on the left half. Your duelist really takes steps with its feet, so sudden changes of direction can make it stumble.</p></div>
+        <div><h3>Right thumb · sword</h3><p>Where you hold the stick is where the blade points. Sweep fast around the edge to slash. Push straight up hard to stab. Let go to return to guard.</p></div>
+        <div><h3>Cutting</h3><p>A fast edge cuts into a limb. The deeper it goes, the more damage. Go most of the way through and the limb comes off. A stab to the heart or head kills instantly.</p></div>
+        <div><h3>Rounds</h3><p>Wounds bleed. If both duelists end up dead it is a draw. Survive your own bleeding after your opponent falls to score. First to 3 wins.</p></div>
+      </div>
+      <button id="btn-howto-done" class="btn primary small">Got it</button>
+    </div>
+  </div>
+
+  <!-- ============ RESULTS ============ -->
+  <div id="results" hidden>
+    <div class="card">
+      <h2 id="results-title">VICTORY</h2>
+      <div id="results-score">3 – 1</div>
+      <p id="results-sub" class="muted"></p>
+      <p id="results-wait" class="muted" hidden>Waiting for the host to start a rematch…</p>
+      <div class="row">
+        <button id="btn-rematch" class="btn primary small">Rematch</button>
+        <button id="btn-results-menu" class="btn small">Main menu</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ LEFT ============ -->
+  <div id="left" class="screen dim" hidden>
+    <div class="card">
+      <h2>You left the game</h2>
+      <p class="muted">You can close this tab now.</p>
+      <button id="btn-come-back" class="btn primary small">Back to the menu</button>
+    </div>
+  </div>
+
+  <!-- ============ GATE (not a phone) ============ -->
+  <div id="gate" class="screen dim" hidden>
+    <div class="card">
+      <h2>Made for phones</h2>
+      <p>Ragdoll Duelists is played with two thumbs on a touch screen. Open this page on your phone and turn it sideways:</p>
+      <code id="gate-url"></code>
+      <p class="muted small-print">Developers: add <b>?desktop=1</b> to the address for a mouse + WASD test mode.</p>
+    </div>
+  </div>
+
+  <!-- ============ ROTATE ============ -->
+  <div id="rotate" hidden>
+    <div class="phone-icon"></div>
+    <p>Turn your phone sideways</p>
+  </div>
+
+  <script src="vendor/peerjs.min.js"></script>
+  <script type="module" src="js/main.js"></script>
+</body>
+</html>
