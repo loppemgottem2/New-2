@@ -486,18 +486,51 @@ function startOnline(link) {
 }
 
 // ------------------------------------------------------------- fullscreen / orientation
+// Android / most browsers: real fullscreen (hides the address bar). It has to be requested
+// from a tap, so we ask when a match starts and again on the next tap if it was left.
+// iPhone Safari does not allow web pages to go fullscreen: there the only way is to
+// add the game to the home screen, so the menu shows a short tip instead.
+const docEl = document.documentElement;
+const FS_SUPPORTED = !!((docEl.requestFullscreen || docEl.webkitRequestFullscreen) && (document.fullscreenEnabled || document.webkitFullscreenEnabled));
+const IS_IOS = /iPhone|iPad|iPod/i.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+const IS_STANDALONE = matchMedia('(display-mode: standalone)').matches || matchMedia('(display-mode: fullscreen)').matches || navigator.standalone === true;
+function isFullscreen() { return !!(document.fullscreenElement || document.webkitFullscreenElement); }
 function goFullscreen() {
-  if (DEV_DESKTOP) return;
-  const el = document.documentElement;
+  if (DEV_DESKTOP || !FS_SUPPORTED || IS_STANDALONE || isFullscreen()) return;
   try {
-    if (!document.fullscreenElement && el.requestFullscreen) el.requestFullscreen({ navigationUI: 'hide' }).then(() => { try { screen.orientation.lock('landscape').catch(() => {}); } catch { /* */ } }).catch(() => {});
-  } catch { /* not supported (iPhone) */ }
+    const p = docEl.requestFullscreen ? docEl.requestFullscreen({ navigationUI: 'hide' }) : docEl.webkitRequestFullscreen();
+    Promise.resolve(p).then(() => {
+      try { const o = screen.orientation; if (o && o.lock) o.lock('landscape').catch(() => {}); } catch { /* */ }
+    }).catch(() => {});
+  } catch { /* not allowed here */ }
+}
+// any tap (touchend counts as a user gesture) brings fullscreen back during a match,
+// and the first tap on the menu enters it too
+let menuFsTried = false;
+window.addEventListener('touchend', () => {
+  if (!MOBILE_OK || current === 'left' || current === 'gate') return;
+  if (session || !menuFsTried) { menuFsTried = true; goFullscreen(); }
+}, { capture: true, passive: true });
+window.addEventListener('click', () => { if (session) goFullscreen(); }, { capture: true });
+// tip for phones where the page itself can't go fullscreen
+function setupFullscreenTip() {
+  const tip = $('fs-tip');
+  let dismissed = false;
+  try { dismissed = localStorage.getItem('rd-fs-tip') === '1'; } catch { /* */ }
+  if (DEV_DESKTOP || IS_STANDALONE || FS_SUPPORTED || dismissed || !MOBILE_OK) return;
+  $('fs-tip-text').textContent = PREVIEW
+    ? 'This preview can\'t hide the top bar. Open the game from its own web address for full screen.'
+    : IS_IOS
+      ? 'Full screen on iPhone: tap Share, then "Add to Home Screen", and open the game from your home screen.'
+      : 'Full screen: open the game in your phone\'s browser (not inside another app), or use "Add to Home screen".';
+  tip.hidden = false;
+  $('fs-tip-close').addEventListener('click', () => { tip.hidden = true; try { localStorage.setItem('rd-fs-tip', '1'); } catch { /* */ } });
 }
 
 // menu: tap anywhere that isn't a control -> the hero swings
 $('menu').addEventListener('pointerdown', (e) => {
   sound.unlock();
-  if (e.target.closest('button, input, label, .menu-panel')) return;
+  if (e.target.closest('button, input, label, .menu-panel, .fs-tip')) return;
   menuScene.swing();
 });
 
@@ -519,6 +552,7 @@ applySettings();
 syncSettingsUI();
 checkOrientation();
 show('menu');
+setupFullscreenTip();
 if (!MOBILE_OK) { show('gate'); $('gate-url').textContent = location.href.split('#')[0]; }
 document.body.classList.add('ready');
 requestAnimationFrame(frame);
