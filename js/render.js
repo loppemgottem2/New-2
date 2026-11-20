@@ -552,7 +552,7 @@ export class GameRenderer {
     // pick the side that's closest to where the camera already is
     const p = new THREE.Vector3(-u.z, 0, u.x);
     const curDir = new THREE.Vector3(cs.pos.x - mid.x, 0, cs.pos.z - mid.z).normalize();
-    const beta = 0.98; // radians from straight behind the player toward the side
+    const beta = 0.82; // radians from straight behind the player toward the side
     const dirA = u.clone().multiplyScalar(-Math.cos(beta)).addScaled ? null : null;
     void dirA;
     const d1 = new THREE.Vector3().copy(u).multiplyScalar(-Math.cos(beta)).add(p.clone().multiplyScalar(Math.sin(beta)));

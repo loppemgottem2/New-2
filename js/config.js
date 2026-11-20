@@ -23,7 +23,7 @@ export const CONFIG = {
   FIGHTER: {
     HP: 100,
     LIMB_HP: 100,
-    WALK_SPEED: 1.6,       // m/s desired speed at full stick
+    WALK_SPEED: 1.35,       // m/s desired speed at full stick
     STEP_TIME: 0.30,       // seconds per step while walking
     STAND_HEIGHT: 0.91,    // hip joint height while standing (knees slightly bent)
     TURN_RATE: 5.0,        // rad/s facing turn speed

@@ -806,6 +806,11 @@ export class Fighter {
     const F = new V3();
     if (walking) {
       F.set(vd.x - this.comVel.x, 0, vd.z - this.comVel.z).scale(m * 7);
+      // don't outrun the feet: fade the push (and brake) when a planted foot trails too far
+      let worst = 0;
+      for (const sd of stance) worst = Math.max(worst, this._footReach(sd));
+      const k = smoothstep((worst - 0.32) / 0.14);
+      if (k > 0) F.scale(1 - k * 0.85);
     } else {
       const sup = new V3();
       for (const sd of stance) sup.add(P['foot' + sd].pos);

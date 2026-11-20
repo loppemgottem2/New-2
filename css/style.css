@@ -185,3 +185,5 @@ input[type=range]::-moz-range-thumb { width: 22px; height: 22px; border-radius: 
 
 .name-row input { width: 52%; border: 2px solid var(--sand); border-radius: 10px; padding: 6px 10px; font: 500 15px/1.2 var(--font-ui); color: var(--ink); background: #fff; }
 .row.compact { gap: 8px; }
+.card-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.card-head .btn { width: auto; padding: 8px 22px; }
