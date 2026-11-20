@@ -395,8 +395,15 @@ export class Fighter {
     const r = Math.min(1, Math.hypot(sx, sy));
     const phi = Math.atan2(sx, sy); // 0 = forward, +pi/2 = right
     const back = Math.max(0, -Math.cos(phi));
-    const thetaMax = lerp(2.05, 0.95, smoothstep((Math.abs(phi) - 1.6) / 1.5)); // less tilt toward the back (no 360s)
-    const theta = r * thetaMax;
+    // max tilt from vertical: level when pointing at the enemy, lower out to the sides
+    // (wide sweeps), much less toward the back (wind-up only — never a full 360)
+    const side = Math.abs(Math.sin(phi));
+    const thetaMax = lerp(lerp(1.62, 2.05, side), 0.95, smoothstep((Math.abs(phi) - 1.6) / 1.5));
+    // pointing forward: the first ~60% of the stick levels the blade, the rest thrusts it
+    const fwd = Math.pow(Math.max(0, Math.cos(phi)), 2);
+    const rT = lerp(r, Math.min(1, r / 0.6), fwd);
+    const thrust = fwd * smoothstep((r - 0.58) / 0.4);
+    const theta = rT * thetaMax;
     const cp = Math.cos(phi), sp = Math.sin(phi);
     // tip direction (rest: upright, tilted slightly toward the opponent)
     const d = new V3().copy(UP).scale(Math.cos(theta))
@@ -404,13 +411,14 @@ export class Fighter {
     // grip center position (world), relative to the torso center
     const base = torso.pos;
     const P = this.swTargetPos.copy(base)
-      .addScaled(UP, -0.13 + 0.16 * back * r + 0.05 * r)
-      .addScaled(F, 0.34 + 0.13 * Math.max(0, cp) * r * (1 - 0.4 * Math.abs(sp)) - 0.06 * back * r)
-      .addScaled(R, 0.15 * sp * r - 0.03);
+      .addScaled(UP, -0.13 + 0.16 * back * r + 0.05 * r * (1 - fwd) + 0.06 * thrust)
+      .addScaled(F, 0.32 + 0.1 * Math.max(0, cp) * r * (1 - side) + 0.3 * thrust - 0.06 * back * r)
+      .addScaled(R, 0.15 * sp * r - 0.03 * (1 - thrust));
+    this.thrust = thrust;
     // keep within arm reach of both shoulders
     const sh = _a.copy(base).addScaled(UP, GEO.shoulderY - GEO.torsoY);
     const off = _b.subVectors(P, sh); const ol = off.len();
-    if (ol > 0.5) P.copy(sh).addScaled(off, 0.5 / ol);
+    if (ol > 0.58) P.copy(sh).addScaled(off, 0.58 / ol);
     // edge direction follows the motion of the tip
     this.prevTipDir.copy(this.tipDir);
     this.tipDir.copy(d);
@@ -478,6 +486,7 @@ export class Fighter {
       const ft = this.parts['foot' + side];
       if (ft.grounded) ft.lastGround = this.time;
       ft.planted = this.time - (ft.lastGround ?? -1) < 0.15;
+      ft.groundTime = ft.grounded ? (ft.groundTime || 0) + dt : 0; // continuous contact time
     }
     this._computeCOM();
     const P = this.parts, J = this.joints, FC = CONFIG.FIGHTER;
@@ -564,7 +573,7 @@ export class Fighter {
       // update target until late in the swing
       if (g.phase < 0.7) this._stepTarget(side, cp, vd, F, R, g.target);
       const swingFoot = P['foot' + side];
-      const landed = g.phase > 0.5 && swingFoot.grounded;
+      const landed = g.phase > 0.72 && swingFoot.grounded;
       if (landed || g.phase > 1.8 || this.fallen || legOK[side] <= 0.3) {
         g.lastSwing = side; g.swing = null; g.cooldown = vdLen > 0.1 ? 0 : 0.06; g.stepCount++;
       }
@@ -589,13 +598,12 @@ export class Fighter {
       if (Math.max(reachR, reachL) > 0.3) {
         want = reachR > reachL ? 'R' : 'L';
       } else if (vdLen > 0.12) {
-        // walking: alternate feet, start with the foot that is behind relative to the move direction
-        const md = new V3().copy(vd).normalize();
-        const behindR = new V3().subVectors(footR, this.com).dot(md), behindL = new V3().subVectors(footL, this.com).dot(md);
-        want = g.stepCount > 0 && g.lastSwing ? (g.lastSwing === 'R' ? 'L' : 'R') : (behindR < behindL ? 'R' : 'L');
-        // lateral moves: lead with the foot on the moving side first
-        const lat = md.dot(R);
-        if (Math.abs(lat) > 0.7 && g.lastSwing && Math.abs(sepR) < 0.18) want = lat > 0 ? 'R' : 'L';
+        // walking: step the foot that is farthest from where it should go (alternating when equal)
+        const tR = this._stepTarget('R', cp, vd, F, R, new V3()), tL = this._stepTarget('L', cp, vd, F, R, new V3());
+        const dR = Math.hypot(footR.x - tR.x, footR.z - tR.z), dL = Math.hypot(footL.x - tL.x, footL.z - tL.z);
+        const bias = 0.05;
+        want = dR + (g.lastSwing === 'R' ? -bias : bias) > dL ? 'R' : 'L';
+        if (Math.max(dR, dL) < 0.06) want = null;
       } else if (outside > 0.075) {
         if (Math.abs(errR) > Math.abs(errF) * 0.8) want = errR > 0 ? 'R' : 'L';
         else {
@@ -620,7 +628,7 @@ export class Fighter {
       // can only lift a foot if the other one is on the ground
       if (want) {
         const other = want === 'R' ? 'L' : 'R';
-        if (!P['foot' + other].planted && !P['shin' + other].grounded) want = null;
+        if (!(P['foot' + other].groundTime > 0.07) && !P['shin' + other].grounded) want = null;
       }
       if (want) {
         g.swing = want; g.phase = 0;
@@ -656,10 +664,11 @@ export class Fighter {
     out.copy(cp).addScaled(R, s * 0.13).addScaled(F, s * 0.06);
     out.addScaled(vd, this.gait.dur * 0.55);
     out.y = 0;
-    // no crossing: keep the swing foot on its own side of the stance foot
+    // no crossing (and not too wide): keep the swing foot on its own side of the stance foot
     const rel = _a.subVectors(out, stance); rel.y = 0;
     const lat = rel.dot(R) * s;
     if (lat < 0.17) out.addScaled(R, s * (0.17 - lat));
+    else if (lat > 0.42) out.addScaled(R, -s * (lat - 0.42));
     // limit step length
     rel.subVectors(out, stance); rel.y = 0;
     const L = rel.len();
@@ -668,6 +677,7 @@ export class Fighter {
     // keep inside the arena wall
     const rr = Math.hypot(out.x, out.z), lim = this.world.arenaRadius - 0.25;
     if (rr > lim) { out.x *= lim / rr; out.z *= lim / rr; }
+    return out;
   }
 
   _legsControl(dt, legOK) {
@@ -747,7 +757,7 @@ export class Fighter {
         hipJ.groundChild = true;
         setDrive(hipJ, DRIVE_PARENT_WORLD, (1500 * strength * fallenScale) / nStance, 30, (560 * strength) / nStance + 40);
         kneeJ.driveTarget.copy(qT).conjugate().multiply(qS);
-        setDrive(kneeJ, DRIVE_REL, 1600 * strength * fallenScale, 30, 520 * strength);
+        setDrive(kneeJ, DRIVE_REL, 1000 * strength * fallenScale, 45, 400 * strength);
         ankJ.driveTarget.copy(qS);
         ankJ.groundChild = true;
         setDrive(ankJ, DRIVE_PARENT_WORLD, 520 * strength * fallenScale, 25, 85 * strength);
@@ -767,9 +777,9 @@ export class Fighter {
         ik2(hipPos, ankT, GEO.thighLen, GEO.shinLen, pole, d1, d2);
         limbOrient(d1, d2, -1, F, qT, qS);
         hipJ.driveTarget.copy(qT);
-        setDrive(hipJ, DRIVE_CHILD_WORLD, 420 * strength * fallenScale, 28, 220 * strength);
+        setDrive(hipJ, DRIVE_CHILD_WORLD, 420 * strength * fallenScale, 40, 220 * strength);
         kneeJ.driveTarget.copy(qT).conjugate().multiply(qS);
-        setDrive(kneeJ, DRIVE_REL, 380 * strength * fallenScale, 24, 160 * strength);
+        setDrive(kneeJ, DRIVE_REL, 380 * strength * fallenScale, 34, 160 * strength);
         ankJ.driveTarget.copy(_q.setFromYaw(this.facing));
         setDrive(ankJ, DRIVE_CHILD_WORLD, 70 * strength, 16, 40);
       }
@@ -783,7 +793,10 @@ export class Fighter {
   _legPush(dt, legOK) {
     const P = this.parts, FC = CONFIG.FIGHTER, g = this.gait;
     const stance = [];
-    for (const side of ['R', 'L']) if (g.swing !== side && legOK[side] > 0.3 && P['foot' + side].planted) stance.push(side);
+    let settle = 0;
+    for (const side of ['R', 'L']) if (g.swing !== side && legOK[side] > 0.3 && P['foot' + side].planted) {
+      stance.push(side); settle = Math.max(settle, smoothstep((P['foot' + side].groundTime || 0) / 0.1));
+    }
     this.pushForce = this.pushForce || new V3();
     this.pushForce.set(0, 0, 0);
     if (!stance.length || (this.fallen && this.gettingUp < 0.5)) return;
@@ -801,8 +814,14 @@ export class Fighter {
       sup.addScaled(H, -0.015);
       F.set((sup.x - this.com.x) * 22 - this.comVel.x * 7, 0, (sup.z - this.com.z) * 22 - this.comVel.z * 7).scale(m);
     }
-    // leash: a leg can't push the hips further away than it can reach
-    for (const sd of stance) {
+    // leash: a leg can't push the hips further away than it can reach. Only the foot that
+    // is furthest along the push matters (the rear foot of a walking stride is about to lift).
+    let lead = stance[0];
+    if (stance.length > 1) {
+      const pa = P['foot' + stance[0]].pos, pb = P['foot' + stance[1]].pos;
+      lead = (pa.x - pb.x) * F.x + (pa.z - pb.z) * F.z >= 0 ? stance[0] : stance[1];
+    }
+    for (const sd of [lead]) {
       const ank = P['shin' + sd].localToWorld(_b.set(0, -GEO.shinLen / 2, 0), new V3());
       const hip = P.torso.localToWorld(_b.set((sd === 'R' ? -1 : 1) * GEO.hipX, GEO.hipY - GEO.torsoY, 0), new V3());
       const dx = hip.x - ank.x, dz = hip.z - ank.z, dl = Math.hypot(dx, dz);
@@ -818,13 +837,13 @@ export class Fighter {
     // height support: help the knees hold the hips at standing height (legs only push)
     const pelvisY = P.torso.pos.y + (GEO.hipY - GEO.torsoY);
     const hErr = FC.STAND_HEIGHT - pelvisY;
-    F.y = clamp(m * (hErr * 30 - P.torso.vel.y * 5), 0, 0.6 * m * 9.81) * str;
+    F.y = clamp(m * (hErr * 22 - P.torso.vel.y * 11), 0, 0.55 * m * 9.81) * str;
     // friction cone: sideways push limited by the weight actually on the feet
     const n = this.world.substeps, sdt = dt;
     let load = 0;
     for (const sd of stance) load += P['foot' + sd].groundNormalForce * n / (sdt * sdt);
     load = Math.max(load, 0) + F.y;
-    const maxF = Math.min(0.8 * load, 420) * str;
+    const maxF = Math.min(0.8 * load, 420) * str * (0.25 + 0.75 * settle);
     const fh = Math.hypot(F.x, F.z); if (fh > maxF) { F.x *= maxF / fh; F.z *= maxF / fh; }
     P.torso.force.add(F);
     for (const sd of stance) P['foot' + sd].force.addScaled(F, -1 / stance.length);
