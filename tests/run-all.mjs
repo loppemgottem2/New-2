@@ -29,11 +29,10 @@ for (const d of [[0, 1], [0, -1], [1, 0], [-1, 0]]) {
 { const r = runChaos({ seed: 3, seconds: 40 }); check('chaos input stays mostly upright', r.fallTime < 8 && r.finite, r); }
 // 5. combat: a rim slash cuts, a thrust stabs
 {
-  const rim = (t0, a0, a1, dur) => { const p = []; for (let k = 0; k <= 6; k++) { const a = a0 + (a1 - a0) * k / 6; p.push([t0 + dur * k / 6, Math.sin(a) * 0.95, Math.cos(a) * 0.95]); } return p; };
-  const slash = path([[0, 0, 0], [0.4, 0.92, 0.3], ...rim(0.8, 1.35, -1.35, 0.22), [1.4, -0.92, 0.3], ...rim(1.7, -1.35, 1.35, 0.22), [2.3, 0, 0]]);
+  const slash = path([[0, 0, 0.86], [0.4, 0.95, 0.3], [0.8, 0.95, 0.3], [0.98, -0.95, 0.12], [1.4, -0.95, 0.3], [1.7, -0.95, 0.3], [1.88, 0.95, 0.12], [2.3, 0, 0.86]]);
   const r = duel({ script: slash });
   check('slash cuts and damages', (r.ev.slash || 0) > 0 && r.hpB < 100 && r.finite, r);
-  const stab = path([[0, 0, 0], [0.5, 0, 0.2], [0.9, 0, 0.2], [1.0, 0, 1], [1.6, 0, 1], [1.9, 0, 0.2], [2.4, 0, 0.2], [2.5, 0.05, 1], [3.5, 0, 1]]);
+  const stab = path([[0, 0, 0.86], [0.5, 0, 0.3], [0.9, 0, 0.3], [1.0, 0, 0.0], [1.6, 0, 0.0], [1.9, 0, 0.3], [2.4, 0, 0.3], [2.5, 0, 0.02], [3.5, 0, 0.02]]);
   const s = duel({ script: stab, dist: 1.35 });
   check('thrust stabs', (s.ev.stab || 0) > 0 && s.hpB < 100 && s.finite, s);
 }
