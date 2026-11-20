@@ -26,14 +26,14 @@ const _c1 = new V3(), _c2 = new V3(), _v1 = new V3(), _v2 = new V3(), _r1 = new 
 
 // damage numbers per limb kind for a cut all the way through (fraction 1.0)
 const KIND = {
-  torso: { hp: 70, limb: 120, bleed: 6.5, resist: 1.6, stabHp: 55 },
-  head:  { hp: 110, limb: 150, bleed: 8.0, resist: 1.3, stabHp: 100 },
-  arm:   { hp: 20, limb: 135, bleed: 3.4, resist: 1.0, stabHp: 16 },
-  hand:  { hp: 10, limb: 140, bleed: 2.0, resist: 0.8, stabHp: 8 },
-  leg:   { hp: 24, limb: 135, bleed: 4.4, resist: 1.15, stabHp: 18 },
-  foot:  { hp: 9, limb: 140, bleed: 2.0, resist: 0.8, stabHp: 7 },
+  torso: { hp: 70, limb: 120, bleed: 4.2, resist: 1.6, stabHp: 55 },
+  head:  { hp: 110, limb: 150, bleed: 5.0, resist: 1.3, stabHp: 100 },
+  arm:   { hp: 20, limb: 135, bleed: 2.2, resist: 1.0, stabHp: 16 },
+  hand:  { hp: 10, limb: 140, bleed: 1.3, resist: 0.8, stabHp: 8 },
+  leg:   { hp: 24, limb: 135, bleed: 2.9, resist: 1.15, stabHp: 18 },
+  foot:  { hp: 9, limb: 140, bleed: 1.3, resist: 0.8, stabHp: 7 },
 };
-const STUMP_BLEED = { head: 0, arm: 6.5, hand: 3.2, leg: 8.5, foot: 3.2 };
+const STUMP_BLEED = { head: 0, arm: 4.6, hand: 2.4, leg: 6.0, foot: 2.4 };
 // heart: torso local position (character's left = +x local), radius
 const HEART = new V3(0.055, 0.07, 0.04), HEART_R = 0.065;
 
@@ -354,7 +354,7 @@ export class Combat {
     for (const w of f.wounds) {
       if (w.body === body && !w.stump && !opts.stump && w.local.distTo(local) < 0.05) { w.rate0 = w.rate0 * Math.exp(-(this.time - w.t0) / CONFIG.COMBAT.BLEED_DECAY) + rate; w.t0 = this.time; return w; }
     }
-    const w = { body, local, rate0: rate, t0: this.time, stump: !!opts.stump, detachedPart: !!opts.detachedPart, size: opts.size ?? clamp(rate / 5, 0.25, 1) };
+    const w = { body, limb: body.limb, local, rate0: rate, rate, t0: this.time, stump: !!opts.stump, detachedPart: !!opts.detachedPart, size: opts.size ?? clamp(rate / 5, 0.25, 1) };
     f.wounds.push(w);
     return w;
   }
