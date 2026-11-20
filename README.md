@@ -19,7 +19,9 @@ A 3D physics sword-fighting game for **phones**. Two wobbly stickmen duel with s
 2. Go to **Settings → Pages**.
 3. **Build and deployment**: Source = **Deploy from a branch**, Branch = the branch with this code (for example `main` after merging, or `claude/ragdoll-duelists-game-f503u0`), folder = **/ (root)** → **Save**.
 4. After about a minute the game is live at `https://<your-username>.github.io/<repo-name>/`.
-   Open it on your phone and turn it sideways. Use **Add to Home Screen** to get an app icon that opens fullscreen.
+   Open it on your phone and turn it sideways.
+
+**Full screen:** on Android the game hides the address bar by itself as soon as a match starts (and again on your next tap if you swipe out). iPhones don't let web pages go full screen, so on an iPhone tap **Share → Add to Home Screen** and start the game from that icon — it then opens without any browser bars.
 
 Any static host works too (Netlify, Cloudflare Pages, itch.io as an HTML game…).
 
