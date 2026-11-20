@@ -31,10 +31,14 @@ button { font: inherit; color: inherit; cursor: pointer; }
 button:focus-visible, input:focus-visible { outline: 3px solid #fff; outline-offset: 2px; }
 
 /* ---------------- joysticks ---------------- */
-.stick { position: fixed; left: 0; top: 0; border-radius: 50%; border: 2px solid rgba(255, 255, 255, 0.55); background: radial-gradient(circle, rgba(255,255,255,0.10), rgba(19,34,56,0.18)); pointer-events: none; z-index: 1; }
+.stick { position: fixed; bottom: calc(24px + var(--safe-b)); border-radius: 50%; border: 2px solid rgba(255, 255, 255, 0.5); background: radial-gradient(circle, rgba(255,255,255,0.08), rgba(19,34,56,0.16)); pointer-events: none; z-index: 1; opacity: 0.75; transition: opacity 0.15s; }
+.stick.move { left: max(30px, calc(var(--safe-l) + 14px)); }
+.stick.sword { right: max(30px, calc(var(--safe-r) + 14px)); }
+.stick.active { opacity: 1; border-color: rgba(255, 255, 255, 0.8); }
+.stick.sword::before { content: ''; position: absolute; left: 50%; top: 7%; width: 10px; height: 10px; margin-left: -5px; border-radius: 50%; border: 2px dashed rgba(255,255,255,0.55); }
 .stick .knob { position: absolute; left: 50%; top: 50%; width: 46%; height: 46%; margin: -23% 0 0 -23%; border-radius: 50%; background: rgba(247, 243, 234, 0.85); box-shadow: 0 2px 10px rgba(19,34,56,0.35); }
 .stick.sword .knob { background: linear-gradient(160deg, #f4f7fa, #aab6c2); }
-.stick-label { position: absolute; left: 0; right: 0; top: 100%; margin-top: 6px; text-align: center; font: 600 15px/1 var(--font-display); letter-spacing: 0.12em; color: rgba(255,255,255,0.8); text-shadow: 0 1px 3px rgba(0,0,0,0.4); }
+.stick-label { position: absolute; left: 0; right: 0; top: 100%; margin-top: 3px; text-align: center; font: 600 13px/1 var(--font-display); letter-spacing: 0.14em; color: rgba(255,255,255,0.8); text-shadow: 0 1px 3px rgba(0,0,0,0.4); }
 
 /* ---------------- HUD ---------------- */
 #hud { position: fixed; inset: 0; z-index: 3; pointer-events: none; }

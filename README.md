@@ -38,8 +38,8 @@ then open `http://localhost:8000/?desktop=1` (the `?desktop=1` switch allows mou
 
 | | |
 |---|---|
-| **Left half of the screen** | Walk joystick (appears under your thumb). Movement is relative to the camera. |
-| **Right half of the screen** | Sword joystick. Touching it takes the sword from its upright guard; drag to aim the tip anywhere in the half-dome in front of you: up = high, down = low in front, left/right = out to the sides (never behind you). The middle of the stick points at your opponent and the arms reach out: that's how you **stab**. Swipe fast across to **slash**. Let go to return to guard. |
+| **Bottom-left stick** | Walk (fixed in place). Movement is relative to the camera. |
+| **Bottom-right stick** | Sword (fixed in place). Its knob rests at the upright guard near the top of the circle; drag it to aim the tip anywhere in the half-dome in front of you: up = high, down = low in front, left/right = out to the sides (never behind you). The centre of the stick points at your opponent and the arms reach out: that's how you **stab**. Swipe fast across to **slash**. Let go to return to guard. |
 | **⚙** | Settings during a match (pauses bot fights). |
 | **✕** | In a match: tap once, then tap again to leave to the main menu. On the main menu: leaves the game. |
 | **Main menu** | Tap anywhere outside the buttons and your duelist on the pedestal swings in a random direction. |
