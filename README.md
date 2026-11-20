@@ -23,6 +23,8 @@ A 3D physics sword-fighting game for **phones**. Two wobbly stickmen duel with s
 
 Any static host works too (Netlify, Cloudflare Pages, itch.io as an HTML game…).
 
+> A copy of the game also lives in the `ragdoll-duelists/` folder of the **New** repository (same branch name). If you publish *that* repository with GitHub Pages instead, the game is at `https://<your-username>.github.io/New/ragdoll-duelists/`.
+
 ### Run it on your computer
 ES modules don't load from `file://`, so start any static server in this folder:
 ```

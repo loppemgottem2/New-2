@@ -4,6 +4,7 @@ import { runWalk } from './walk.mjs';
 import { runChaos } from './chaos.mjs';
 import { duel, path } from './combat.mjs';
 import { botMatch } from './botmatch.mjs';
+import { runPedestal } from './pedestal.mjs';
 import { makeWorld, finite, Fighter } from './harness.mjs';
 
 let failed = 0;
@@ -36,7 +37,9 @@ for (const d of [[0, 1], [0, -1], [1, 0], [-1, 0]]) {
   const s = duel({ script: stab, dist: 1.35 });
   check('thrust stabs', (s.ev.stab || 0) > 0 && s.hpB < 100 && s.finite, s);
 }
-// 6. full bot matches finish and the stronger bot wins
+// 6. menu hero keeps his balance on the pedestal
+{ const r = runPedestal(1, 60); check('pedestal hero stays up on random swings', r.falls === 0 && r.maxFootRadius < 0.6, r); }
+// 7. full bot matches finish and the stronger bot wins
 {
   const a = botMatch(10, 1, 1), b = botMatch(1, 10, 2);
   check('bot match completes', a.winner !== 'none' && a.ok && b.ok, { a: a.scores, b: b.scores, secs: [a.secs, b.secs] });
